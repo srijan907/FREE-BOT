@@ -1,32 +1,29 @@
+import axios from "axios";
+
 export default async function handler(req, res) {
-  const { code } = req.query;
-
-  if (!code || !/^[0-9]{11,15}$/.test(code)) {
-    return res.status(400).json({
-      bot: "R4BBIT-MINI",
-      status: "error",
-      message: "Invalid or missing number"
-    });
-  }
-
-  const mainApi = process.env.MAIN_API || "http://mainline.proxy.rlwy.net:55620/pair?code=";
-
   try {
-    const response = await fetch(`${mainApi}${code}`);
-    const data = await response.json();
+    const { number } = req.query;
+    if (!number)
+      return res.status(400).json({ status: "error", message: "❌ Number missing" });
+
+    const apiUrl = process.env.MAIN_API_URL;
+    const botName = process.env.BOT_NAME || "R4BBIT-MINI";
+
+    // Forward request to the real API
+    const { data } = await axios.get(`${apiUrl}?code=${number}`);
 
     return res.status(200).json({
-      bot: "R4BBIT-MINI",
-      number: data.number || code,
-      code: data.code || "UNKNOWN",
-      status: data.status || "failed"
+      status: data.status || "success",
+      bot: botName,
+      number: data.number || number,
+      code: data.code || "N/A",
+      message: data.message || "✅ Code generated successfully",
     });
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error("Error fetching pairing code:", err.message);
     return res.status(500).json({
-      bot: "R4BBIT-MINI",
       status: "error",
-      message: "Failed to connect to main API"
+      message: "❌ Failed to get pairing code",
     });
   }
 }
