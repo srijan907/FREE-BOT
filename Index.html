@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐰 R4BBIT MINI - Pairing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; font-family: 'Rubik', sans-serif; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(circle at top, #0a0518, #160a3a, #1c0b44);
+      color: white;
+      display: flex; justify-content: center; align-items: center; flex-direction: column;
+      min-height: 100vh; text-align: center; padding: 20px;
+    }
+    .container {
+      max-width: 400px; background: rgba(255,255,255,0.08); border-radius: 20px;
+      padding: 25px; box-shadow: 0 0 25px rgba(0,0,0,0.4); backdrop-filter: blur(8px);
+    }
+    .rainbow-text {
+      font-size: 22px; font-weight: bold;
+      background: linear-gradient(90deg, #ff007f, #ff7b00, #00ffd5, #00c3ff, #ff00ff);
+      -webkit-background-clip: text; color: transparent; animation: rainbow 3s infinite linear;
+    }
+    @keyframes rainbow { from {filter: hue-rotate(0deg);} to {filter: hue-rotate(360deg);} }
+    .emoji { font-size: 24px; }
+    .subtext { font-size: 15px; color: #cfcfcf; margin: 10px 0 20px; }
+    .input-container { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+    input {
+      width: 100%; padding: 12px; font-size: 16px; border: none; outline: none;
+      border-radius: 10px; text-align: center; background: rgba(255,255,255,0.9);
+      color: #444; font-weight: bold; opacity: 0.8; transition: 0.3s;
+    }
+    input::placeholder { color: #666; font-weight: bold; opacity: 0.6; }
+    input:focus { opacity: 1; color: #000; }
+    button {
+      width: 100%; background: linear-gradient(90deg, #ff00a8, #ff4d4d);
+      border: none; border-radius: 10px; padding: 12px;
+      color: white; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.3s;
+    }
+    button:hover { transform: scale(1.03); background: linear-gradient(90deg, #ff4d4d, #ff00a8); }
+    #pair { margin-top: 15px; }
+    .loader {
+      border: 4px solid #f3f3f3; border-top: 4px solid #00ffcc; border-radius: 50%;
+      width: 35px; height: 35px; animation: spin 1s linear infinite; margin: 15px auto;
+    }
+    @keyframes spin { 0% {transform: rotate(0deg);} 100% {transform: rotate(360deg);} }
+    .error-message {
+      background: rgba(255, 0, 0, 0.2); border: 1px solid #ff4d4d; color: #ffcccc;
+      padding: 10px; border-radius: 10px; text-align: center; margin-top: 10px;
+    }
+    .code-display {
+      background: rgba(255, 255, 255, 0.1); border-radius: 10px;
+      padding: 15px; text-align: center; margin-top: 15px; color: #fff;
+    }
+    #copy {
+      background: white; padding: 8px 10px; border-radius: 8px;
+      color: black; font-weight: bold; cursor: pointer; transition: 0.2s;
+    }
+    #copy:hover { transform: scale(1.05); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h3 class="rainbow-text">
+      <span class="emoji">🐰</span> R4BBIT MINI BOT PAIRING <span class="emoji">💫</span>
+    </h3>
+    <p class="subtext">Enter your WhatsApp number </p>
+
+    <div class="input-container">
+      <input id="number" type="text" placeholder="+917439382677" />
+      <button id="submit"><i class="fas fa-paper-plane"></i> ENTER</button>
+    </div>
+
+    <div id="pair"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
+  <script>
+    const pairOutput = document.getElementById("pair");
+    const submitBtn = document.getElementById("submit");
+    const inputField = document.getElementById("number");
+
+    inputField.focus();
+
+    async function CopyCode() {
+      const codeEl = document.getElementById("copy");
+      const code = codeEl.innerText.replace("CODE: ", "").trim();
+      await navigator.clipboard.writeText(code);
+      codeEl.innerHTML = "✅ Copied!";
+      setTimeout(() => {
+        codeEl.innerHTML = `CODE: <span style="color:black;font-weight:bold">${code}</span>`;
+      }, 2000);
+    }
+
+    submitBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const rawNumber = inputField.value.replace(/[^0-9]/g, "");
+      if (!rawNumber || rawNumber.length < 11) {
+        pairOutput.innerHTML = `<div class="error-message">❌ Invalid number format. Include your country code.</div>`;
+        return;
+      }
+      inputField.value = "+" + rawNumber;
+      pairOutput.innerHTML = `<div class="loader"></div><p style="color:white;text-align:center">Processing your request...</p>`;
+      try {
+        const pairRes = await axios.get(`/api/pair?code=${rawNumber}`);
+        const data = pairRes.data;
+        if (data && data.code) {
+          pairOutput.innerHTML = `
+            <div class="code-display">
+              <p>Bot: <b>${data.bot}</b></p>
+              <p>Number: <b>${data.number}</b></p>
+              <p id="copy" onclick="CopyCode()">CODE: <span style="color:black;font-weight:bold">${data.code}</span></p>
+              <p>Status: <b style="color:#4CAF50">${data.status}</b></p>
+            </div>`;
+        } else {
+          pairOutput.innerHTML = `<div class="error-message">⚠️ No pairing code received from server</div>`;
+        }
+      } catch (err) {
+        pairOutput.innerHTML = `<div class="error-message">❌ Failed to get pairing code</div>`;
+      }
+    });
+
+    inputField.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") submitBtn.click();
+    });
+  </script>
+</body>
+</html>
